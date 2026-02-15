@@ -3,8 +3,6 @@ package de.tobiassachs;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
-import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
-import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -14,29 +12,25 @@ import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class CaCertsCommand extends AbstractCommand {
 
-    private final OptionalArg<List<String>> argsArg;
-
     public CaCertsCommand(String name, String description) {
         super(name, description);
-        this.argsArg = withListOptionalArg("args", "Flags: -a to show all", ArgTypes.STRING);
+        setAllowsExtraArguments(true);
     }
 
     @Nullable
     @Override
     protected CompletableFuture<Void> execute(@Nonnull CommandContext context) {
 
+        String input = context.getInputString().trim();
         boolean showAll = false;
-        List<String> args = this.argsArg.get(context);
-        if (args != null) {
-            for (String arg : args) {
-                if (arg.equals("-a") || arg.equals("--all")) {
-                    showAll = true;
-                }
+        String[] parts = input.split("\\s+");
+        for (int i = 1; i < parts.length; i++) {
+            if (parts[i].equals("-a") || parts[i].equals("--all")) {
+                showAll = true;
             }
         }
 

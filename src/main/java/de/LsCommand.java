@@ -3,8 +3,6 @@ package de.tobiassachs;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
-import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
-import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -24,43 +22,42 @@ import java.util.stream.Stream;
 
 public class LsCommand extends AbstractCommand {
 
-    private final OptionalArg<List<String>> argsArg;
-
     public LsCommand(String name, String description) {
         super(name, description);
-        this.argsArg = withListOptionalArg("args", "Flags and path, e.g. -lsah /dev", ArgTypes.STRING);
+        setAllowsExtraArguments(true);
     }
 
     @Nullable
     @Override
     protected CompletableFuture<Void> execute(@Nonnull CommandContext context) {
 
-        // parse flags and path from arguments
+        String input = context.getInputString().trim();
+
+        // parse flags and path from raw input, e.g. "ls -lsah /dev"
         boolean longFormat = false;
         boolean showAll = false;
         boolean humanReadable = false;
         boolean showSize = false;
         String targetPath = ".";
 
-        List<String> args = this.argsArg.get(context);
-        if (args != null) {
-            for (String part : args) {
-                if (part.startsWith("-")) {
-                    String flags = part.substring(1);
-                    for (char c : flags.toCharArray()) {
-                        switch (c) {
-                            case 'l': longFormat = true; break;
-                            case 'a': showAll = true; break;
-                            case 'h': humanReadable = true; break;
-                            case 's': showSize = true; break;
-                            default:
-                                context.sendMessage(Message.raw("ls: unknown flag '-" + c + "'"));
-                                return CompletableFuture.completedFuture(null);
-                        }
+        String[] parts = input.split("\\s+");
+        for (int i = 1; i < parts.length; i++) {
+            String part = parts[i];
+            if (part.startsWith("-")) {
+                String flags = part.substring(1);
+                for (char c : flags.toCharArray()) {
+                    switch (c) {
+                        case 'l': longFormat = true; break;
+                        case 'a': showAll = true; break;
+                        case 'h': humanReadable = true; break;
+                        case 's': showSize = true; break;
+                        default:
+                            context.sendMessage(Message.raw("ls: unknown flag '-" + c + "'"));
+                            return CompletableFuture.completedFuture(null);
                     }
-                } else {
-                    targetPath = part;
                 }
+            } else {
+                targetPath = part;
             }
         }
 
