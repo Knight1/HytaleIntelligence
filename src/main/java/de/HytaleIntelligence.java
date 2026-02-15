@@ -20,5 +20,7 @@ public class HytaleIntelligence extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new DiskSpaceCommand("disk", "Show disk space usage"));
         this.getCommandRegistry().registerCommand(new JavaInfoCommand("javainfo", "Show Java/JDK/JVM information"));
         this.getCommandRegistry().registerCommand(new LsCommand("ls", "List directory contents"));
+        this.getCommandRegistry().registerCommand(new CaCertsCommand("cacerts", "Show CA certificates"));
+        this.getCommandRegistry().registerCommand(new HardwareIdCommand("hwid", "Show all hardware IDs and serials"));
     }
 }
