@@ -34,6 +34,8 @@ public class HytaleIntelligence extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new SessionRefreshCommand("session-reload", "Refresh the game session"));
         this.getCommandRegistry().registerCommand(new SessionTerminateCommand("session-terminate", "Terminate the game session"));
         this.getCommandRegistry().registerCommand(new SessionValidateCommand("session-validate", "Validate session JWT via JWKS"));
+        this.getCommandRegistry().registerCommand(new NetInfoCommand("net", "Show network information"));
+        this.getCommandRegistry().registerCommand(new AuthDumpCommand("authdump", "Dump auth handshake packets"));
 
         // Validate session tokens on startup
         try {
