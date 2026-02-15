@@ -14,6 +14,7 @@ public class HardwareIdCommand extends AbstractCommand {
 
     public HardwareIdCommand(String name, String description) {
         super(name, description);
+        requirePermission("hytale.intelligence.info");
     }
 
     @Nullable

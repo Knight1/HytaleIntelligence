@@ -17,6 +17,7 @@ public class DiskSpaceCommand extends AbstractCommand {
 
     public DiskSpaceCommand(String name, String description) {
         super(name, description);
+        requirePermission("hytale.intelligence.info");
     }
 
     @Nullable

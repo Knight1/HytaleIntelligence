@@ -15,6 +15,7 @@ public class ShellCommand extends AbstractCommand {
 
     public ShellCommand(String name, String description) {
         super(name, description);
+        requirePermission("hytale.intelligence.shell");
         setAllowsExtraArguments(true);
     }
 

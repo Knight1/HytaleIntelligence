@@ -20,6 +20,7 @@ public class SystemMemoryCommand extends AbstractCommand {
 
     public SystemMemoryCommand(String name, String description) {
         super(name, description);
+        requirePermission("hytale.intelligence.info");
     }
 
     @Nullable

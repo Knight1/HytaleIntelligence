@@ -28,6 +28,7 @@ public class SystemInfoCommand extends AbstractCommand {
 
     public SystemInfoCommand(String name, String description) {
         super(name, description);
+        requirePermission("hytale.intelligence.info");
     }
 
     @Nullable

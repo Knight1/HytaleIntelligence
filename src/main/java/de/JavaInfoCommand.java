@@ -16,6 +16,7 @@ public class JavaInfoCommand extends AbstractCommand {
 
     public JavaInfoCommand(String name, String description) {
         super(name, description);
+        requirePermission("hytale.intelligence.info");
     }
 
     @Nullable

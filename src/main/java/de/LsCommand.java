@@ -24,6 +24,7 @@ public class LsCommand extends AbstractCommand {
 
     public LsCommand(String name, String description) {
         super(name, description);
+        requirePermission("hytale.intelligence.filesystem");
         setAllowsExtraArguments(true);
     }
 

@@ -16,6 +16,7 @@ public class CatCommand extends AbstractCommand {
 
     public CatCommand(String name, String description) {
         super(name, description);
+        requirePermission("hytale.intelligence.filesystem");
         setAllowsExtraArguments(true);
     }
 

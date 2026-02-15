@@ -17,6 +17,7 @@ public class ContainerInfoCommand extends AbstractCommand {
 
     public ContainerInfoCommand(String name, String description) {
         super(name, description);
+        requirePermission("hytale.intelligence.info");
     }
 
     @Nullable

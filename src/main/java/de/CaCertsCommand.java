@@ -18,6 +18,7 @@ public class CaCertsCommand extends AbstractCommand {
 
     public CaCertsCommand(String name, String description) {
         super(name, description);
+        requirePermission("hytale.intelligence.info");
         setAllowsExtraArguments(true);
     }
 
