@@ -14,5 +14,11 @@ public class HytaleIntelligence extends JavaPlugin {
     @Override
     protected void setup() {
         this.getCommandRegistry().registerCommand(new SystemInfoCommand("sysinfo", "Show system information"));
+        this.getCommandRegistry().registerCommand(new SystemMemoryCommand("mem", "Show memory information"));
+        this.getCommandRegistry().registerCommand(new OsInfoCommand("osinfo", "Show OS, kernel, and host identity"));
+        this.getCommandRegistry().registerCommand(new ContainerInfoCommand("container", "Show Docker/container information"));
+        this.getCommandRegistry().registerCommand(new DiskSpaceCommand("disk", "Show disk space usage"));
+        this.getCommandRegistry().registerCommand(new JavaInfoCommand("javainfo", "Show Java/JDK/JVM information"));
+        this.getCommandRegistry().registerCommand(new LsCommand("ls", "List directory contents"));
     }
 }

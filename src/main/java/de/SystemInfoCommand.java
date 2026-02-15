@@ -6,23 +6,23 @@ import com.hypixel.hytale.server.core.command.system.CommandContext;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.File;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Enumeration;
 import java.net.URI;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+import static de.tobiassachs.CommandUtils.*;
 
 public class SystemInfoCommand extends AbstractCommand {
 
@@ -34,29 +34,14 @@ public class SystemInfoCommand extends AbstractCommand {
     @Override
     protected CompletableFuture<Void> execute(@Nonnull CommandContext context) {
 
-
-        boolean docker = new File("/.dockerenv").exists();
         int cores = Runtime.getRuntime().availableProcessors();
         String os = System.getProperty("os.name");
         String arch = System.getProperty("os.arch");
 
-        context.sendMessage(Message.raw("Docker: " + isDocker()));
         context.sendMessage(Message.raw("CPU cores: " + cores));
         context.sendMessage(Message.raw("OS: " + os + " (" + arch + ")"));
-        Map<String, String> env = System.getenv();
-        context.sendMessage(Message.raw("ENV count: " + env.size()));
         context.sendMessage(Message.raw("Cloud: " + detectCloudProvider()));
         context.sendMessage(Message.raw("Virtualization: " + detectVirtualization()));
-        context.sendMessage(Message.raw("Container ID: " + getContainerId()));
-        context.sendMessage(Message.raw("Container cgroup: " + getDockerCgroupInfo()));
-
-        context.sendMessage(Message.raw("---- ENV VARIABLES (" + env.size() + ") ----"));
-
-        for (Map.Entry<String, String> entry : env.entrySet()) {
-            context.sendMessage(
-                    Message.raw(entry.getKey() + "=" + entry.getValue())
-            );
-        }
 
         // ---- CPU MODEL ----
         String cpuModel = "Unknown";
@@ -70,7 +55,13 @@ public class SystemInfoCommand extends AbstractCommand {
         } catch (Exception ignored) {}
 
         context.sendMessage(Message.raw("CPU Model: " + cpuModel));
-        context.sendMessage(Message.raw("CPU Cores: " + Runtime.getRuntime().availableProcessors()));
+
+        // ---- ENV VARIABLES ----
+        Map<String, String> env = System.getenv();
+        context.sendMessage(Message.raw("---- ENV VARIABLES (" + env.size() + ") ----"));
+        for (Map.Entry<String, String> entry : env.entrySet()) {
+            context.sendMessage(Message.raw(entry.getKey() + "=" + entry.getValue()));
+        }
 
         // ---- LOCAL / HOST IPs ----
         context.sendMessage(Message.raw("---- Local Network Interfaces ----"));
@@ -115,19 +106,6 @@ public class SystemInfoCommand extends AbstractCommand {
                 new InputStreamReader(url.openStream())
         );
         return br.readLine();
-    }
-
-    private boolean isDocker() {
-        try {
-            if (new File("/.dockerenv").exists()) return true;
-
-            String cgroup = Files.readString(Paths.get("/proc/1/cgroup"));
-            return cgroup.contains("docker") ||
-                    cgroup.contains("containerd") ||
-                    cgroup.contains("kubepods");
-        } catch (Exception e) {
-            return false;
-        }
     }
 
     private String detectCloudProvider() {
@@ -205,22 +183,4 @@ public class SystemInfoCommand extends AbstractCommand {
             return false;
         }
     }
-
-    private String getContainerId() {
-        try {
-            String hostname = Files.readString(Paths.get("/etc/hostname")).trim();
-            return hostname;
-        } catch (Exception e) {
-            return "Unknown";
-        }
-    }
-
-    private String getDockerCgroupInfo() {
-        try {
-            return Files.readString(Paths.get("/proc/self/cgroup"));
-        } catch (Exception e) {
-            return "Unavailable";
-        }
-    }
-
 }
