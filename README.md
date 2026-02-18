@@ -101,7 +101,7 @@ Documentation: https://rentry.co/gykiza2m
 
 ```
 openssl s_client \
-  -connect 127.0.0.1:19941 \
+  -connect 127.0.0.1:5520 \
   -quic \
   -alpn hytale/2 \
   -servername 127.0.0.1
