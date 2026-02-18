@@ -4,6 +4,8 @@ import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 
+import com.hypixel.hytale.server.core.auth.ServerAuthManager;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.URI;
@@ -26,10 +28,11 @@ public class SessionTerminateCommand extends AbstractCommand {
     @Override
     protected CompletableFuture<Void> execute(@Nonnull CommandContext context) {
 
-        String sessionToken = System.getenv("HYTALE_SERVER_SESSION_TOKEN");
+        ServerAuthManager authManager = ServerAuthManager.getInstance();
+        String sessionToken = authManager.hasSessionToken() ? authManager.getSessionToken() : null;
 
         if (sessionToken == null || sessionToken.isEmpty()) {
-            context.sendMessage(Message.raw("Error: HYTALE_SERVER_SESSION_TOKEN is not set"));
+            context.sendMessage(Message.raw("Error: No session token available"));
             return CompletableFuture.completedFuture(null);
         }
 

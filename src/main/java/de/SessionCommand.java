@@ -1,6 +1,7 @@
 package de.tobiassachs;
 
 import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.auth.ServerAuthManager;
 import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 
@@ -11,12 +12,6 @@ import java.util.concurrent.CompletableFuture;
 
 public class SessionCommand extends AbstractCommand {
 
-    private static final String[] TOKEN_VARS = {
-            "HYTALE_SERVER_SESSION_TOKEN",
-            "HYTALE_SERVER_IDENTITY_TOKEN",
-            "HYTALE_SERVER_AUDIENCE"
-    };
-
     public SessionCommand(String name, String description) {
         super(name, description);
         requirePermission("hytale.intelligence.info");
@@ -26,62 +21,104 @@ public class SessionCommand extends AbstractCommand {
     @Override
     protected CompletableFuture<Void> execute(@Nonnull CommandContext context) {
 
-        context.sendMessage(Message.raw("---- Session / Auth Tokens ----"));
+        ServerAuthManager authManager = ServerAuthManager.getInstance();
 
-        for (String varName : TOKEN_VARS) {
-            String value = System.getenv(varName);
-            if (value == null || value.isEmpty()) {
-                context.sendMessage(Message.raw(varName + ": Not set"));
-            } else {
-                context.sendMessage(Message.raw(varName + ": " + value));
+        // ---- Auth State ----
+        context.sendMessage(Message.raw("---- Auth State ----"));
+        context.sendMessage(Message.raw("  Auth Mode: " + authManager.getAuthMode()));
+        context.sendMessage(Message.raw("  Auth Status: " + authManager.getAuthStatus()));
+        context.sendMessage(Message.raw("  Singleplayer: " + authManager.isSingleplayer()));
+        context.sendMessage(Message.raw("  Server Session ID: " + authManager.getServerSessionId()));
 
-                if (varName.endsWith("_TOKEN")) {
-                    decodeJwt(context, varName, value);
-                }
-            }
+        if (authManager.getTokenExpiry() != null) {
+            context.sendMessage(Message.raw("  Token Expiry: " + authManager.getTokenExpiry()));
         }
 
-        // Also check system properties as fallback
+        // ---- Session Token ----
         context.sendMessage(Message.raw(""));
-        context.sendMessage(Message.raw("---- Related System Properties ----"));
-        String[] props = {
-                "hytale.server.session.token",
-                "hytale.server.identity.token",
-                "hytale.server.audience"
-        };
-        for (String prop : props) {
-            String value = System.getProperty(prop);
-            if (value != null && !value.isEmpty()) {
-                context.sendMessage(Message.raw(prop + ": " + value));
-            } else {
-                context.sendMessage(Message.raw(prop + ": Not set"));
-            }
+        context.sendMessage(Message.raw("---- Session Token ----"));
+        if (authManager.hasSessionToken()) {
+            String sessionToken = authManager.getSessionToken();
+            context.sendMessage(Message.raw("  " + sessionToken));
+            decodeJwt(context, sessionToken);
+        } else {
+            context.sendMessage(Message.raw("  Not set"));
         }
 
-        // Check for auth-related env vars
+        // ---- Identity Token ----
         context.sendMessage(Message.raw(""));
-        context.sendMessage(Message.raw("---- Other Auth-Related ENV ----"));
+        context.sendMessage(Message.raw("---- Identity Token ----"));
+        if (authManager.hasIdentityToken()) {
+            String identityToken = authManager.getIdentityToken();
+            context.sendMessage(Message.raw("  " + identityToken));
+            decodeJwt(context, identityToken);
+        } else {
+            context.sendMessage(Message.raw("  Not set"));
+        }
+
+        // ---- OAuth Access Token ----
+        context.sendMessage(Message.raw(""));
+        context.sendMessage(Message.raw("---- OAuth Access Token ----"));
+        try {
+            String oauthToken = authManager.getOAuthAccessToken();
+            if (oauthToken != null && !oauthToken.isEmpty()) {
+                context.sendMessage(Message.raw("  " + oauthToken));
+                decodeJwt(context, oauthToken);
+            } else {
+                context.sendMessage(Message.raw("  Not set"));
+            }
+        } catch (Exception e) {
+            context.sendMessage(Message.raw("  " + e.getMessage()));
+        }
+
+        // ---- Selected Profile ----
+        context.sendMessage(Message.raw(""));
+        context.sendMessage(Message.raw("---- Selected Profile ----"));
+        try {
+            var profile = authManager.getSelectedProfile();
+            if (profile != null) {
+                context.sendMessage(Message.raw("  " + profile));
+            } else {
+                context.sendMessage(Message.raw("  None"));
+            }
+        } catch (Exception e) {
+            context.sendMessage(Message.raw("  " + e.getMessage()));
+        }
+
+        // ---- Game Session ----
+        context.sendMessage(Message.raw(""));
+        context.sendMessage(Message.raw("---- Game Session ----"));
+        try {
+            var gameSession = authManager.getGameSession();
+            if (gameSession != null) {
+                context.sendMessage(Message.raw("  " + gameSession));
+            } else {
+                context.sendMessage(Message.raw("  None"));
+            }
+        } catch (Exception e) {
+            context.sendMessage(Message.raw("  " + e.getMessage()));
+        }
+
+        // ---- Auth-related env vars (keep as supplementary) ----
+        context.sendMessage(Message.raw(""));
+        context.sendMessage(Message.raw("---- Auth-Related ENV ----"));
+        boolean anyFound = false;
         for (var entry : System.getenv().entrySet()) {
             String key = entry.getKey().toUpperCase();
             if (key.contains("TOKEN") || key.contains("SESSION") || key.contains("AUTH")
                     || key.contains("SECRET") || key.contains("CREDENTIAL") || key.contains("HYTALE")) {
-                if (!isKnownTokenVar(entry.getKey())) {
-                    context.sendMessage(Message.raw(entry.getKey() + "=" + entry.getValue()));
-                }
+                context.sendMessage(Message.raw("  " + entry.getKey() + "=" + entry.getValue()));
+                anyFound = true;
             }
+        }
+        if (!anyFound) {
+            context.sendMessage(Message.raw("  (none found)"));
         }
 
         return CompletableFuture.completedFuture(null);
     }
 
-    private boolean isKnownTokenVar(String name) {
-        for (String known : TOKEN_VARS) {
-            if (known.equals(name)) return true;
-        }
-        return false;
-    }
-
-    private void decodeJwt(CommandContext context, String name, String jwt) {
+    private void decodeJwt(CommandContext context, String jwt) {
         try {
             String[] parts = jwt.split("\\.");
             if (parts.length < 2) {
@@ -89,15 +126,12 @@ public class SessionCommand extends AbstractCommand {
                 return;
             }
 
-            context.sendMessage(Message.raw("  ---- JWT Header ----"));
             String header = decodeBase64(parts[0]);
-            context.sendMessage(Message.raw("  " + header));
+            context.sendMessage(Message.raw("  Header: " + header));
 
-            context.sendMessage(Message.raw("  ---- JWT Payload ----"));
             String payload = decodeBase64(parts[1]);
-            context.sendMessage(Message.raw("  " + payload));
+            context.sendMessage(Message.raw("  Payload: " + payload));
 
-            // Extract common JWT fields
             extractField(context, payload, "iss", "Issuer");
             extractField(context, payload, "sub", "Subject");
             extractField(context, payload, "aud", "Audience");
@@ -112,36 +146,26 @@ public class SessionCommand extends AbstractCommand {
     }
 
     private String decodeBase64(String encoded) {
-        // JWT uses URL-safe base64 without padding
         String padded = encoded;
         int mod = padded.length() % 4;
         if (mod > 0) {
             padded += "====".substring(mod);
         }
-        byte[] decoded = Base64.getUrlDecoder().decode(padded);
-        return new String(decoded);
+        return new String(Base64.getUrlDecoder().decode(padded));
     }
 
     private void extractField(CommandContext context, String json, String field, String label) {
-        // Simple JSON field extraction without a JSON library
-        String search = "\"" + field + "\"";
-        int idx = json.indexOf(search);
-        if (idx < 0) return;
-
-        int colonIdx = json.indexOf(':', idx + search.length());
-        if (colonIdx < 0) return;
-
-        int valueStart = colonIdx + 1;
-        while (valueStart < json.length() && json.charAt(valueStart) == ' ') valueStart++;
-
-        if (valueStart >= json.length()) return;
-
-        String value;
-        if (json.charAt(valueStart) == '"') {
-            int valueEnd = json.indexOf('"', valueStart + 1);
-            if (valueEnd < 0) return;
-            value = json.substring(valueStart + 1, valueEnd);
-        } else {
+        String value = SessionValidateCommand.extractJsonString(json, field);
+        if (value == null) {
+            // Try numeric value
+            String search = "\"" + field + "\"";
+            int idx = json.indexOf(search);
+            if (idx < 0) return;
+            int colonIdx = json.indexOf(':', idx + search.length());
+            if (colonIdx < 0) return;
+            int valueStart = colonIdx + 1;
+            while (valueStart < json.length() && json.charAt(valueStart) == ' ') valueStart++;
+            if (valueStart >= json.length()) return;
             int valueEnd = valueStart;
             while (valueEnd < json.length() && json.charAt(valueEnd) != ',' && json.charAt(valueEnd) != '}') {
                 valueEnd++;
@@ -149,7 +173,6 @@ public class SessionCommand extends AbstractCommand {
             value = json.substring(valueStart, valueEnd).trim();
         }
 
-        // If it looks like a unix timestamp, also show human-readable
         if ((field.equals("exp") || field.equals("iat") || field.equals("nbf")) && value.matches("\\d+")) {
             long epoch = Long.parseLong(value);
             java.util.Date date = new java.util.Date(epoch * 1000);

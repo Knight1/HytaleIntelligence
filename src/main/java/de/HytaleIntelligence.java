@@ -1,5 +1,6 @@
 package de.tobiassachs;
 
+import com.hypixel.hytale.server.core.auth.ServerAuthManager;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 
@@ -34,13 +35,17 @@ public class HytaleIntelligence extends JavaPlugin {
         this.getCommandRegistry().registerCommand(new SessionRefreshCommand("session-reload", "Refresh the game session"));
         this.getCommandRegistry().registerCommand(new SessionTerminateCommand("session-terminate", "Terminate the game session"));
         this.getCommandRegistry().registerCommand(new SessionValidateCommand("session-validate", "Validate session JWT via JWKS"));
-        this.getCommandRegistry().registerCommand(new NetInfoCommand("net", "Show network information"));
+        this.getCommandRegistry().registerCommand(new NetInfoCommand("network", "Show network information"));
         this.getCommandRegistry().registerCommand(new AuthDumpCommand("authdump", "Dump auth handshake packets"));
+        this.getCommandRegistry().registerCommand(new ServerCertCommand("cert", "Show server TLS/QUIC certificate"));
+        this.getCommandRegistry().registerCommand(new SessionLogoutCommand("session-logout", "Logout from auth session"));
+        this.getCommandRegistry().registerCommand(new SessionShutdownCommand("session-shutdown", "Shutdown auth manager"));
 
         // Validate session tokens on startup
         try {
-            String sessionToken = System.getenv("HYTALE_SERVER_SESSION_TOKEN");
-            String identityToken = System.getenv("HYTALE_SERVER_IDENTITY_TOKEN");
+            ServerAuthManager authManager = ServerAuthManager.getInstance();
+            String sessionToken = authManager.hasSessionToken() ? authManager.getSessionToken() : null;
+            String identityToken = authManager.hasIdentityToken() ? authManager.getIdentityToken() : null;
             String[] results = SessionValidateCommand.validateQuiet(sessionToken, identityToken);
             getLogger().at(Level.INFO).log("Session token: %s", results[0]);
             getLogger().at(Level.INFO).log("Identity token: %s", results[1]);

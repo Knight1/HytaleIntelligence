@@ -4,6 +4,8 @@ import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 
+import com.hypixel.hytale.server.core.auth.ServerAuthManager;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.URI;
@@ -38,12 +40,13 @@ public class SessionValidateCommand extends AbstractCommand {
     @Override
     protected CompletableFuture<Void> execute(@Nonnull CommandContext context) {
 
-        String sessionToken = System.getenv("HYTALE_SERVER_SESSION_TOKEN");
-        String identityToken = System.getenv("HYTALE_SERVER_IDENTITY_TOKEN");
+        ServerAuthManager authManager = ServerAuthManager.getInstance();
+        String sessionToken = authManager.hasSessionToken() ? authManager.getSessionToken() : null;
+        String identityToken = authManager.hasIdentityToken() ? authManager.getIdentityToken() : null;
 
         if ((sessionToken == null || sessionToken.isEmpty())
                 && (identityToken == null || identityToken.isEmpty())) {
-            context.sendMessage(Message.raw("Error: Neither HYTALE_SERVER_SESSION_TOKEN nor HYTALE_SERVER_IDENTITY_TOKEN is set"));
+            context.sendMessage(Message.raw("Error: No session or identity token available"));
             return CompletableFuture.completedFuture(null);
         }
 
